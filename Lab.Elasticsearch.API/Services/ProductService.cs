@@ -28,9 +28,23 @@ public class ProductService : IProductService
         return resp.Found ? resp.Source : null;
     }
 
-    public Task<string> CreateAsync(Product product, CancellationToken ct = default)
+    // ADIM 4: Insert
+    // Manuel ID veriyorsak IndexAsync + Id ile.
+    public async Task<string> CreateAsync(Product product, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(product.Id))
+            product.Id = Guid.NewGuid().ToString("N");
+
+        var resp = await _client.IndexAsync(product, idx => idx
+            .Index(_indexName)
+            .Id(product.Id)
+            // Anında aranabilir olsun (eğitim amaçlı; prod'da default refresh interval'ı bekle)
+            .Refresh(Elastic.Clients.Elasticsearch.Refresh.True), ct);
+
+        if (!resp.IsValidResponse)
+            throw new InvalidOperationException($"Insert başarısız: {resp.DebugInformation}");
+
+        return product.Id;
     }
 
     public Task UpdatePartialAsync(string id, Dictionary<string, object> fields, CancellationToken ct = default)
