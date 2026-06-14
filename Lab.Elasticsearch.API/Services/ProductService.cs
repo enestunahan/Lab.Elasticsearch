@@ -22,9 +22,10 @@ public class ProductService : IProductService
     }
     
     
-    public Task<Product?> GetByIdAsync(string id, CancellationToken ct = default)
+    public async Task<Product?> GetByIdAsync(string id, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var resp = await _client.GetAsync<Product>(id,g=>g.Index(_indexName),ct);
+        return resp.Found ? resp.Source : null;
     }
 
     public Task<string> CreateAsync(Product product, CancellationToken ct = default)
